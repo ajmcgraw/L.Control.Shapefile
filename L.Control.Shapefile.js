@@ -26,48 +26,47 @@ L.Control.Shapefile = L.Control.extend({
                 document.getElementById("file").click();
             })
             .addListener(input, 'change', function(){
-                thisControl.fileToArrayBuffer(this.files[0])
+                thisControl.fileToMap(this.files[0])
             });
 
-        controlUI.title = 'Upload a Shapefile';
+        controlUI.title = 'Upload a zipped file with a .dbf, .shx and .shp';
 
         return controlDiv;
     },
 
-    // When the user uploads a file, convert the file to an array buffer.
-    fileToArrayBuffer: function(file) {
+    fileToMap: function(file) {
         var thisControl = this;
 
         var reader = new FileReader();
 
-        reader.onloadend = function (e) {
-            console.log(e.target.result);
-            console.log(e.target.result.byteLength);
+        reader.onload = function (e) {
 
-            // Pass the array buffer to the shapfile-js function
-            thisControl.loadArrayBuffer(e.target.result);
+            //console.log(e.target.result)
+            thisControl.fileToShape(e.target.result)
+
+
         };
 
         reader.readAsArrayBuffer(file);
 
     },
 
-    // Convert the array buffer to geojson and add it to the map as a layer
-    loadArrayBuffer: function(buffer) {
+    fileToShape: function(file) {
+        var geoLayer = L.geoJson({features:[]}).addTo(map);
+        var theShp = file;
+        shp(theShp).then(function(data){
 
-        shp(buffer).then(function (geojson) {
-            var layer = L.geoJSON(geojson);
-            var layers = layer._layers;
-            Object.keys(layers).forEach(function(key) {
-                var layer = (layers[key]);
-                layer.addTo(map);
-            });
-        });
-    }
+            //adding the layer to the map
+            geoLayer.addData(data);
+
+            //this zooms to the layer
+            map.fitBounds(geoLayer.getBounds());
+        })
+
+    },
+
 });
 
 L.control.shapefile = function(opts) {
     return new L.Control.Shapefile(opts);
 };
-
-
